@@ -60,6 +60,6 @@ int main(int argc, char const *argv[])
         printf("RETRAIT EFFECTUE: Le nouveau solde du compte est de %lf \n", accounts[account]);
         exit(0);
     }
-    sshmdt(shm_id);    
+    sshmdt(shm);    
     exit(0);
 }
