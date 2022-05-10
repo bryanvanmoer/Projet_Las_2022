@@ -8,58 +8,45 @@
 int main(int argc, char const *argv[])
 {
 
-    if (argc != 3)
-    {
-        printf("Ce programme fonctionne avec 2 argument :\n\t./compte \n\t ./montant \n");
+    //Verification des arguments
+    if(argc != 3 ){
+
+        printf("Ce programme fonctionne avec 2 argument : numero de compte + montant \n");
+        printf("Le numero de compte se situant entre 0 et 999\n");
         exit(0);
     }
 
-    //recuperer les params et les mettre dans des variables
-    int account = atoi(argv[1]);
-    int amount = atoi(argv[2]);
+    if(atoi(argv[1]) < 0 || atoi(argv[1]) > 999){
+        printf("Montant ou numero de compte invalide\n");
+        exit(0);
+    }
+
+    //Recuperation des valeurs passées en argument
+    int compte = atoi(argv[1]);
+    int montant = atoi(argv[2]);
 
     //GET SEMAPHORE
-	int sem_id = sem_get(SEM_KEY, 1);
-	//GET SHARED MEMORY
-	int shm_id = sshmget(SHARED_MEMORY_KEY, sizeof(int), 0);
+    sem_get(SEM_KEY, 1);
+    //GET SHARED MEMORY
+    int shm_id = sshmget(SHARED_MEMORY_KEY, sizeof(double)*MAX_SIZE_MEMORY, 0);
 
-	void* shm = sshmat(shm_id);
-	
-	/*  
-	sem_down0(sem_id);
+    double* tab = sshmat(shm_id);
 
-	int* shmInt = (int*) shm;
+    if(montant == 0){
+        printf("Le montant est égal a 0 !\n");
 
-	int size = shmInt[0];
-    */
+    } else if(montant > 0){
+        tab[compte] += (double)montant;
+        printf("DEPOT EFFECTUE: Le solde de votre compte est de : %lf\n", tab[compte]);
 
-    if (amount == 0)
-    {
-        printf("Le montant ne peux pas etre nul\n");
-        exit(0);
+    } else if(montant < 0){
+        printf("Solde compte : %lf\n",tab[compte]);
+        printf("Montant : %lf\n", (double)montant);
+        tab[compte] = tab[compte] + montant;
+        printf("RETRAIT EFFECTUE: Le solde de votre compte est de : %lf\n", tab[compte]);
     }
 
-    // depot
-    // Si le montant est positif, le programme effectue un dépôt sur le compte en banque et
-    // affiche le nouveau solde du compte. Par exemple, l'exécution de la commande “pdr 24 200”
-    // permet d’effectuer un dépôt de 200 euros sur le compte 24.
-    else if (amount > 0)
-    {
-        accounts[account] = accounts[account] + amount;
-        printf("DEPOT EFFECTUE: Le nouveau solde du compte est de %lf \n", accounts[account]);
-        exit(0);
-    }
-
-    // retrait
-    // Si le montant est négatif, le programme effectue un retrait sur le compte en banque et
-    // affiche le nouveau solde du compte. L'exécution de la commande “pdr 24 -200”
-    // permet d’effectuer un retrait de 200 euros sur le compte 24
-    else
-    {
-        accounts[account] = accounts[account] - amount;
-        printf("RETRAIT EFFECTUE: Le nouveau solde du compte est de %lf \n", accounts[account]);
-        exit(0);
-    }
-    sshmdt(shm);    
+    sshmdt(tab);    
     exit(0);
+
 }
