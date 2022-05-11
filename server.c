@@ -24,15 +24,15 @@ int main(int argc, char const *argv[]) {
 	int sockfd = initSocketServer(server_port, MAX_SIMULTANEOUS);
 	printf("Le serveur tourne sur le port : %i \n",server_port);
 	
-	Transaction transaction;
+	//Transaction transaction;
 
 	/* Ecoute apres un client */
 	int newsockfd = saccept(sockfd);
 
 	/* Lit les transactions du client */
-	sread(newsockfd, &transaction, sizeof(Transaction));
+	//sread(newsockfd, &transaction, sizeof(Transaction));
 
-	printf("Transaction reçue : \n Emetteur : %d \n Crediteur : %d \n Montant : %d \n", transaction.emetteur, transaction.crediteur, transaction.montant);
+	//printf("Transaction reçue : \n Emetteur : %d \n Crediteur : %d \n Montant : %d \n", transaction.emetteur, transaction.crediteur, transaction.montant);
 
 	// close connection client
 	sclose(newsockfd);
