@@ -17,7 +17,7 @@ int main(int argc, char const *argv[])
     }
 
     if(atoi(argv[1]) < 0 || atoi(argv[1]) > 999){
-        printf("Montant ou numero de compte invalide\n");
+        printf("Numero de compte invalide\n");
         exit(0);
     }
 
@@ -40,8 +40,6 @@ int main(int argc, char const *argv[])
         printf("DEPOT EFFECTUE: Le solde de votre compte est de : %lf\n", tab[compte]);
 
     } else if(montant < 0){
-        printf("Solde compte : %lf\n",tab[compte]);
-        printf("Montant : %lf\n", (double)montant);
         tab[compte] = tab[compte] + montant;
         printf("RETRAIT EFFECTUE: Le solde de votre compte est de : %lf\n", tab[compte]);
     }
