@@ -9,22 +9,24 @@
 #include <sys/sem.h>
 
 
-#define SHARED_MEMORY_KEY 1
-#define SEM_KEY 1 
+#define SHARED_MEMORY_KEY 123
+#define SEM_KEY 456
 #define PERM 0666
+
+#define MAX_SIMULTANEOUS 100
 
 #define MAX_SIZE_MEMORY 1000
 #define MAX_SIZE_ERROR_MSG 4000
 #define MAX 255
 
-/*
+
 typedef struct Transaction {
 	int debiteur;
     int crediteur;
 	double solde;
 } Transaction;
 
-
+/*
 typedef struct Account {
     int solde;
 	bool decouvert;
