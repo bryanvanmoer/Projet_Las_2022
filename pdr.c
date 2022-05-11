@@ -27,6 +27,7 @@ int main(int argc, char const *argv[])
 
     //GET SEMAPHORE
     sem_get(SEM_KEY, 1);
+    
     //GET SHARED MEMORY
     int shm_id = sshmget(SHARED_MEMORY_KEY, sizeof(double)*MAX_SIZE_MEMORY, 0);
 
@@ -36,12 +37,12 @@ int main(int argc, char const *argv[])
         printf("Le montant est égal a 0 !\n");
 
     } else if(montant > 0){
-        tab[compte] += (double)montant;
-        printf("DEPOT EFFECTUE: Le solde de votre compte est de : %lf\n", tab[compte]);
+        tab[compte] += montant;
+        printf("DEPOT EFFECTUE: Le solde de votre compte est maintenant de : %lf\n", tab[compte]);
 
     } else if(montant < 0){
-        tab[compte] = tab[compte] + montant;
-        printf("RETRAIT EFFECTUE: Le solde de votre compte est de : %lf\n", tab[compte]);
+        tab[compte] += montant;
+        printf("RETRAIT EFFECTUE: Le solde de votre compte est maintenant de : %lf\n", tab[compte]);
     }
 
     sshmdt(tab);    
