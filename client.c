@@ -27,10 +27,24 @@ void minuterie(void *pipefd, void *temps) {
   sclose(pipe[1]);
 }
 
+void virement_recurrent(void *argv, void *port, void *ip){
+    int *pipe = argv;
+    int *server_port = port;
+    int *server_ip = ip;
+
+    //fermeture du pipe en ecriture pour les childs
+    sclose(pipe[1]);
+
+    //execution du code 
+
+    //fermeture du pipe en lecture
+    sclose(pipe[0]);
+}
+
 int main(int argc, char** argv){
 
     //Arg: adr, port, num, delay
-	if(argc != 4) {
+	if(argc != 5) {
         printf("Il manque %d des arguments\n",4-argc);
         exit(EXIT_FAILURE);
     }
@@ -38,12 +52,14 @@ int main(int argc, char** argv){
     char* server_ip = argv[1];
     int server_port = atoi(argv[2]);
     int compteEmetteur = atoi(argv[3]);
-    //int delay = atoi(argv[4]);
+    int delay = atoi(argv[4]);
+    int sockfd;
+    int pipe[2];
+    spipe(pipe);
 
-    //int sockfd = ssocket(); 
-
-    // prepare socket to connect
-    //sconnect(server_ip, server_port, sockfd);
+    //creation des enfants
+    fork_and_run3(virement_recurrent, pipe, &server_port, server_ip);
+    int pid_minuterie = fork_and_run2(minuterie, pipe, &delay);
       
     printf("1) + n2 somme -> virement sur compte n2 avec somme montant \n");
     printf("2) * n2 somme -> virement recurrent sur compte n2 avec somme montant \n");
@@ -52,7 +68,6 @@ int main(int argc, char** argv){
     char buffer[MAX];
     //char *message = "";
     int nbCharRead = sread(0, buffer, MAX);
-    int sockfd;
 
     while(nbCharRead > 0){
         sockfd = initSocketClient(server_ip, server_port);
@@ -66,7 +81,7 @@ int main(int argc, char** argv){
         // *
         else if (buffer[0] == '*')
         {
-            //envoyerVirement(buffer, nbCharRead, compteEmetteur, sockfd);
+            
         }
         // +
         else if (buffer[0] == 'q')
