@@ -17,7 +17,7 @@ int main(int argc, char const *argv[])
     }
 
     if(atoi(argv[1]) < 0 || atoi(argv[1]) > 999){
-        printf("Montant ou numero de compte invalide\n");
+        printf("Numero de compte invalide\n");
         exit(0);
     }
 
