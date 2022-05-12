@@ -23,7 +23,7 @@
 typedef struct Transaction {
 	int debiteur;
     int crediteur;
-	double solde;
+	double montant;
 } Transaction;
 
 /*
