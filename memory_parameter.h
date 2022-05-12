@@ -23,15 +23,9 @@
 typedef struct Transaction {
 	int debiteur;
     int crediteur;
-	double solde;
+	double montant;
 } Transaction;
 
-/*
-typedef struct Account {
-    int solde;
-	bool decouvert;
-} Account;
-*/
 
 double accounts[MAX_SIZE_MEMORY];
 
