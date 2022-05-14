@@ -25,26 +25,40 @@ int main(int argc, char const *argv[]) {
 	printf("Le serveur tourne sur le port : %i \n",server_port);
 	
 	Transaction transaction;
+	int newsockfd;
+	double* tab;
 
-	/* Ecoute apres un client */
-	int newsockfd = saccept(sockfd);
+	while(1){
 
-	/* Lit les transactions du client */
-	sread(newsockfd, &transaction, sizeof(transaction));
+		/* Ecoute apres un client */
+		newsockfd = saccept(sockfd);
 
-	printf("Transaction reçue : \n Emetteur : %d \n Crediteur : %d \n Montant : %lf \n", transaction.debiteur, transaction.crediteur, transaction.montant);
+		/* Lit les transactions du client */
+		int nbCharRead = sread(newsockfd, &transaction, sizeof(transaction));
 
+		//Si le client entre 'q'
+		if(nbCharRead == 0){
+	    	break;
+	    }
 
-    //GET SEMAPHORE
-    sem_get(SEM_KEY, 1);
-    
-    //GET SHARED MEMORY
-    int shm_id = sshmget(SHARED_MEMORY_KEY, sizeof(double)*MAX_SIZE_MEMORY, 0);
+		printf("Virement du compte : %d (debiteur) \nVers le compte : %d (crediteur) \nD'un montant de : %lf€\n",
+		transaction.debiteur, transaction.crediteur,transaction.montant);
+		printf("\n");
 
-    double* tab = sshmat(shm_id);
+	    //GET SEMAPHORE
+	    sem_get(SEM_KEY, 1);
+	    
+	    //GET SHARED MEMORY
+	    int shm_id = sshmget(SHARED_MEMORY_KEY, sizeof(double)*MAX_SIZE_MEMORY, 0);
 
-    tab[transaction.debiteur] -= transaction.montant; 
-    tab[transaction.crediteur] += transaction.montant;
+	    //Attache le segment a la mémoire partagé
+	    tab = sshmat(shm_id);
+
+	    tab[transaction.debiteur] -= transaction.montant; 
+	    tab[transaction.crediteur] += transaction.montant;
+	}
+	
+	//Detache le segment de la memoire partagé
     sshmdt(tab);
 
 	// close connection client

@@ -38,11 +38,11 @@ int main(int argc, char const *argv[])
 
     } else if(montant > 0){
         tab[compte] += montant;
-        printf("DEPOT EFFECTUE: Le solde de votre compte est maintenant de : %lf\n", tab[compte]);
+        printf("DEPOT EFFECTUE: Le solde du compte %d est maintenant de : %lf\n", compte, tab[compte]);
 
     } else if(montant < 0){
         tab[compte] += montant;
-        printf("RETRAIT EFFECTUE: Le solde de votre compte est maintenant de : %lf\n", tab[compte]);
+        printf("RETRAIT EFFECTUE: Le solde du compte %d est maintenant de : %lf\n", compte, tab[compte]);
     }
 
     sshmdt(tab);    
