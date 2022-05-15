@@ -4,55 +4,59 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include "utils_v10.h"
 #include "memory_parameter.h"
 
-void envoyerVirement(int sockfd,Transaction transaction);
-Transaction creeTransaction(char* buffer, int emetteur);
+void envoyerVirement(Transaction transaction);
+void envoyerVirementRecurrent(Transaction transaction);
+Transaction creerTransaction(char* buffer, int emetteur);
+
+char* server_ip;
+int server_port;
+int compteEmetteur;
+int delay;
 
 
 
-void minuterie(void *pipefd, void *temps) {
+void minuterie(void *pipefd, void *battement) {
 
-  int *delay = temps;
+
   int *pipe = pipefd;
-  int i=-1;
-  //close sur lecture
+  int *delay = battement;
+  int val = -1;
+
+  // Close sur lecture
   sclose(pipe[0]);
-  
+   
   while(true){
     sleep(*delay);
-    swrite(pipe[1],&i,sizeof(int));
+    swrite(pipe[1],&val,sizeof(int));
   }
 
-  //close sur ecriture
+  // Close sur ecriture
   sclose(pipe[1]);
 }
 
 
-void virement_recurrent(void *argv, void *port, void *ip){
+void virementRecurrent(void *argv){
 
     int *pipe = argv;
-    int *server_port = port;
-    char *server_ip = ip;
     int nbChrRd =0;
     int result;
     int cpt=0;
-    struct Transaction tabTransaction[10];
+    struct Transaction tabTransaction[MAX_VIREMENT_RECURRENT];
 
     //fermeture du pipe en ecriture
     sclose(pipe[1]);
 
     while((nbChrRd =sread(pipe[0],&result,sizeof(int)))>0){
-        int sockfd;
 
         //Minuterie
         if(result == -1){ 
             for(int i=0; i<cpt ; i++){
-                sockfd = initSocketClient(server_ip, *server_port); 
-                envoyerVirement(sockfd,tabTransaction[i]);
-                sclose(sockfd);
+                envoyerVirementRecurrent(tabTransaction[i]);
             } 
         }
         //Terminal
@@ -61,8 +65,7 @@ void virement_recurrent(void *argv, void *port, void *ip){
             cpt++;
         }
     }
-
-    //fermeture du pipe en lecture
+    // Fermeture du pipe en lecture
     sclose(pipe[0]);
 }
 
@@ -76,18 +79,17 @@ int main(int argc, char** argv){
         exit(EXIT_FAILURE);
     }
 
-    // Recuperation des arguments 
-    char* server_ip = argv[1];
-    int server_port = atoi(argv[2]);
-    int compteEmetteur = atoi(argv[3]);
-    int delay = atoi(argv[4]);
+    // Affectation des arguments 
+    server_ip = argv[1];
+    server_port = atoi(argv[2]);
+    compteEmetteur = atoi(argv[3]);
+    delay = atoi(argv[4]);
 
-    int sockfd;
     int pipe[2];
     spipe(pipe);
 
     // Creation des enfants
-    fork_and_run3(virement_recurrent, pipe, &server_port, server_ip);
+    int pid_recurrent = fork_and_run1(virementRecurrent, pipe);
     int pid_minuterie = fork_and_run2(minuterie, pipe,&delay);
 
     // Close sur lecture
@@ -97,32 +99,33 @@ int main(int argc, char** argv){
     printf("2) * n2 somme -> virement recurrent sur compte n2 avec somme montant \n");
     printf("3) q -> deconnecte le client et libère les ressources du client \n");
 
-    char buffer[MAX];
-    int nbCharRead = sread(0, buffer, MAX);
+    char buffer[MAX_BUFFER];
+    int nbCharRead = sread(0, buffer, MAX_BUFFER);
     int val = 1;
 
     while(nbCharRead > 0){
 
-        sockfd = initSocketClient(server_ip, server_port);
         buffer[nbCharRead-1]= '\0';
-
         // +
         if (buffer[0] == '+')
         {
-            Transaction transaction = creeTransaction(buffer,compteEmetteur);
-            envoyerVirement(sockfd,transaction);
+            Transaction transaction = creerTransaction(buffer,compteEmetteur);
+            envoyerVirement(transaction);
         }
         // *
         else if (buffer[0] == '*')
         {
             swrite(pipe[1],&val,sizeof(int));
-            Transaction transaction = creeTransaction(buffer,compteEmetteur);
+            Transaction transaction = creerTransaction(buffer,compteEmetteur);
             swrite(pipe[1],&transaction,sizeof(Transaction));
         }
         // +
         else if (buffer[0] == 'q')
         {   
-            break;
+            skill(pid_recurrent,SIGKILL);
+            skill(pid_minuterie,SIGKILL);
+            skill(getpid(),SIGKILL);
+            exit(0);
         }
 
         printf("1) + n2 somme -> virement sur compte n2 avec somme montant \n");
@@ -130,20 +133,15 @@ int main(int argc, char** argv){
         printf("3) q -> deconnecte le client et libère les ressources du client \n");
 
         buffer[0]='\0';
-        nbCharRead=sread(0,buffer,MAX); 
+        nbCharRead=sread(0,buffer,MAX_BUFFER); 
     }
-
 
     //close sur ecriture
     sclose(pipe[1]);
-
-    skill(pid_minuterie,SIGKILL);
-    sclose(sockfd);
-
     exit(0);
 }
 
-Transaction creeTransaction(char* buffer, int emetteur){
+Transaction creerTransaction(char* buffer, int emetteur){
     //Delimitateur
     char d[] = " ";
     char *p = strtok(buffer,d);
@@ -163,7 +161,6 @@ Transaction creeTransaction(char* buffer, int emetteur){
     }
 
     //Place les valeurs entrées par l'utilisateur dans une structure Transaction
-    
     Transaction transaction;
     transaction.debiteur = emetteur;
     transaction.crediteur = crediteur;
@@ -172,12 +169,31 @@ Transaction creeTransaction(char* buffer, int emetteur){
     return transaction;
 }
 
-void envoyerVirement(int sockfd, Transaction transaction){
+void envoyerVirement(Transaction transaction){
+
+    double nouveauSolde;
+    int sockfd = initSocketClient(server_ip, server_port);
 
     swrite(sockfd, &transaction, sizeof(transaction));
+    sread(sockfd, &nouveauSolde, sizeof(double));
 
-    // recevoir une reponse du server
+    printf("Virement effectué avec succès !\n");
+    printf("Le nouveau solde de votre compte est : %lf €\n",nouveauSolde);
+    printf("\n");
 
-    printf("Virement effectué avec succes !\n");
+    //sclose
+    sclose(sockfd);
+}
+
+void envoyerVirementRecurrent(Transaction transaction){
+
+    int sockfd = initSocketClient(server_ip, server_port);
+
+    swrite(sockfd, &transaction, sizeof(transaction));
+    printf("Virement recurrent effectué avec succès !\n");
+    printf("\n");
+
+    //sclose
+    sclose(sockfd);
 }
 

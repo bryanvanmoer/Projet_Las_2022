@@ -21,25 +21,22 @@ int main(int argc, char const *argv[]) {
 	int server_port = atoi(argv[1]);
 
 	//Creation du socket 
-	int sockfd = initSocketServer(server_port, MAX_SIMULTANEOUS);
+	int sockfd = initSocketServer(server_port, MAX_SOCKET_SIMULTANEOUS);
 	printf("Le serveur tourne sur le port : %i \n",server_port);
 	
 	Transaction transaction;
 	int newsockfd;
 	double* tab;
 
+
 	while(1){
+
 
 		/* Ecoute apres un client */
 		newsockfd = saccept(sockfd);
 
 		/* Lit les transactions du client */
-		int nbCharRead = sread(newsockfd, &transaction, sizeof(transaction));
-
-		//Si le client entre 'q'
-		if(nbCharRead == 0){
-	    	break;
-	    }
+		sread(newsockfd, &transaction, sizeof(transaction));
 
 		printf("Virement du compte : %d (debiteur) \nVers le compte : %d (crediteur) \nD'un montant de : %lf€\n",
 		transaction.debiteur, transaction.crediteur,transaction.montant);
@@ -56,6 +53,9 @@ int main(int argc, char const *argv[]) {
 
 	    tab[transaction.debiteur] -= transaction.montant; 
 	    tab[transaction.crediteur] += transaction.montant;
+
+	    double nouveauSoldeDebiteur = tab[transaction.debiteur];
+	    swrite(newsockfd, &nouveauSoldeDebiteur, sizeof(double));
 	}
 	
 	//Detache le segment de la memoire partagé
